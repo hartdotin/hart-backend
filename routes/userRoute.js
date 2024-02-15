@@ -58,4 +58,30 @@ router.post('/', async (req, res) => {
     }
 });
 
+
+// Route to get user information by firebaseUid
+router.get('/:firebaseUid', async (req, res) => {
+    const { firebaseUid } = req.params; // Extract firebaseUid from URL parameters
+    console.log(req)
+    console.log(firebaseUid)
+    if (!firebaseUid) {
+        return res.status(400).send({ message: 'firebaseUid is required' });
+    }
+
+    try {
+        const user = await User.findOne({ firebaseUid: firebaseUid });
+        if (!user) {
+            return res.status(404).send({ message: 'User not found' });
+        }
+
+        // Optionally, filter the response to send only relevant information
+        const { hasCompletedOnboarding, name, email, phone, ...otherDetails } = user.toObject();
+        res.status(200).send({ hasCompletedOnboarding, name, email, phone, ...otherDetails });
+
+    } catch (error) {
+        console.error('Error fetching user information:', error);
+        res.status(500).send({ message: 'Error fetching user information' });
+    }
+});
+
 module.exports = router;

@@ -13,18 +13,22 @@ const userSchema = new mongoose.Schema({
     interests: [String],
     location: {
         lat: Number,
-        long: Number
+        long: Number,
+        altitude: Number,
+        accuracy: Number,
     },
     bio: String,
     profilePictures: [Object],
-    lookingFor: [String], 
+    lookingFor: String, 
     preferences: {
         ageRange: {
             min: Number,
             max: Number
         },
         distance: Number
-    }
+    },
+    prompts: mongoose.Schema.Types.Mixed,
+    hasCompletedOnboarding: Boolean
 });
 
 module.exports =  mongoose.model('User', userSchema);
