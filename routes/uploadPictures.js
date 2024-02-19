@@ -1,45 +1,47 @@
 const multer = require('multer');
 const express = require('express');
-const router = express.Router();
-const AWS = require('aws-sdk');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 require('dotenv').config();
 
-
+const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-AWS.config.update({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION
+// Initialize the S3 client with AWS SDK v3
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
 });
 
-const s3 = new AWS.S3();
+router.post('/', upload.array('images', 4), async (req, res) => {
 
-
-router.post('/', upload.array('images', 4), (req, res) => {
-    console.log('req', req.files)
+    const bucketName = 'hart-user-photos';
+    const region = process.env.AWS_REGION;
+    try {
     const uploadPromises = req.files.map(file => {
       const params = {
-        Bucket: 'hart-user-photos',
-        Key: `${file.originalname}`,
-        Body: file.buffer
+        Bucket: bucketName,
+        Key: file.originalname,
+        Body: file.buffer,
+        ContentType: file.mimetype, // Set the content type based on the file type
       };
 
-      //console.log('params',params)
-  
-      return s3.upload(params).promise();
+      return s3Client.send(new PutObjectCommand(params));
     });
-  
-    Promise.all(uploadPromises)
-      .then(results => {
-        //console.log(results)
-        res.status(200).send(results);
-      })
-      .catch(err => {
-        console.error('Error uploading files:', err);
-        res.status(500).send(err);
+
+    const results = await Promise.all(uploadPromises);
+    const urls = results.map((result, index) => {
+      const key = encodeURIComponent(req.files[index].originalname);
+      return `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
     });
+
+    res.status(200).json({ message: "Files uploaded successfully", urls });
+  } catch (err) {
+    console.error('Error uploading files:', err);
+    res.status(500).json({ error: "Server error", details: err.message });
+  }
 });
 
 module.exports = router;
-
