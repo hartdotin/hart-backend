@@ -8,7 +8,13 @@ const Counter = require('../model/counter');
 router.post('/', async (req, res) => {
     //const { firebaseUid, name, dob, phone, lat, long, accessToken, gender, height, creationTime, lastSignInTime } = req.body;
     console.log(req)
-    const { firebaseUid,preferences, ...userData } = req.body;
+    const { firebaseUid, preferences, location, ...userData } = req.body;
+
+    // Transform the incoming location data into a GeoJSON format
+    const geoLocation = {
+        type: 'Point',
+        coordinates: [location.long, location.lat], // Note: GeoJSON uses [longitude, latitude] order
+    };
 
     if (!firebaseUid || !userData.phone) {
         return res.status(400).send({ message: 'firebaseUid and phone are required fields' });
@@ -25,6 +31,10 @@ router.post('/', async (req, res) => {
             if (userData.phone && userData.phone !== user.phone) {
             // Additional handling if phone number changes
             }
+
+            user.location = geoLocation;
+            user.altitude = location.altitude;
+            user.accuracy = location.accuracy;
     
             await user.save();
             return res.status(200).send({ message: 'User updated successfully', user });
@@ -40,6 +50,9 @@ router.post('/', async (req, res) => {
                 userId: counter.count,
                 firebaseUid,
                 preferences,
+                location: geoLocation,
+                altitude: location.altitude,
+                accuracy: location.accuracy,
                 ...userData
             });
     

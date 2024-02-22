@@ -4,11 +4,19 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 const admin = require('firebase-admin');
+const User =  require('./model/user')
+
 // Import routes
 const userRoutes = require('./routes/userRoute');
 const uploadPictures = require('./routes/uploadPictures')
 const errorHandler = require('./middleware/errorMiddleware');
 const promptRoute = require('./routes/promptRoute')
+const getMatches = require('./routes/getMatches');
+const { deleteAllUsers } = require('./utils/deleteManyUsers');
+//const { updateLocationAndAgeRange } = require('./utils/updateData');
+//const { generateUsers } = require('./utils/generateRandomUser');
+
+
 
 
 const app = express();
@@ -23,9 +31,24 @@ app.use(bodyParser.urlencoded({extended: true}))
 
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
+const dbURI = process.env.NODE_ENV === 'production' ? process.env.MONGODB_URI_PROD : process.env.MONGODB_URI;
+//console.log(dbURI)
+mongoose.connect(dbURI)
   .then(() => console.log("MongoDB connected"))
   .catch(err => console.log(err));
+
+
+
+//Generate fake user
+
+//generateUsers()
+
+//deleteAllUsers()
+
+//updateLocationAndAgeRange()
+
+//const User = mongoose.model('User', userSchema);
+ 
 
 
 // const authenticateUser = async (req, res, next) => {
@@ -54,6 +77,7 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/user', userRoutes);
 app.use('/upload', uploadPictures);
 app.use('/', promptRoute)
+app.use('/matches', getMatches)
 
 // Middleware
 app.use(errorHandler);

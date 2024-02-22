@@ -12,12 +12,18 @@ const userSchema = new mongoose.Schema({
     height: String,
     interests: [String],
     location: {
-        lat: Number,
-        long: Number,
-        altitude: Number,
-        accuracy: Number,
+        type: { type: String, enum: ['Point'], default: 'Point' , required: true},
+        coordinates: {
+            type: [Number], // [longitude, latitude]
+            index: '2dsphere', // Create a geospatial index
+            required: true
+        },
+        // Include other location fields if necessary (altitude, accuracy)
     },
+    altitude: Number,
+    accuracy: Number,
     bio: String,
+    interestedIn: String,
     profilePictures: [Object],
     lookingFor: String, 
     preferences: {
@@ -30,6 +36,9 @@ const userSchema = new mongoose.Schema({
     prompts: mongoose.Schema.Types.Mixed,
     hasCompletedOnboarding: Boolean
 });
+
+// Create a geospatial index for the location field
+userSchema.index({ location: '2dsphere' });
 
 module.exports =  mongoose.model('User', userSchema);
 
