@@ -34,7 +34,7 @@ router.get('/:firebaseUid', async (req, res) => {
 
         // Convert the distance preference to meters
         const maxDistance = user.preferences.distance * 1000; // Assuming distance is in kilometers
-        console.log(maxDistance)
+        //console.log(maxDistance)
 
         // Construct the query to find matches based on user preferences and interestedIn
         // Always exclude the current user from the results
@@ -57,7 +57,7 @@ router.get('/:firebaseUid', async (req, res) => {
         };
 
         let preferredMatches = await User.find(preferredQuery).limit(targetNumberOfMatches);
-        console.log(preferredMatches)
+        //console.log(preferredMatches)
 
         allMatches.push(...preferredMatches);
 
@@ -77,7 +77,7 @@ router.get('/:firebaseUid', async (req, res) => {
     
             const ageBasedMatches = await User.find(ageBasedQuery).limit(targetNumberOfMatches - allMatches.length);
 
-            console.log(ageBasedMatches)
+            //console.log(ageBasedMatches)
 
             allMatches.push(...ageBasedMatches);
         }

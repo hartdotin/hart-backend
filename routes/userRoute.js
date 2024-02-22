@@ -7,7 +7,7 @@ const Counter = require('../model/counter');
 
 router.post('/', async (req, res) => {
     //const { firebaseUid, name, dob, phone, lat, long, accessToken, gender, height, creationTime, lastSignInTime } = req.body;
-    console.log(req)
+    
     const { firebaseUid, preferences, location, ...userData } = req.body;
 
     // Transform the incoming location data into a GeoJSON format
@@ -23,7 +23,6 @@ router.post('/', async (req, res) => {
     try {
         let user = await User.findOne({ firebaseUid });
         if (user) {
-            console.log('user already present', userData)
             Object.keys(userData).forEach(key => {
                 user[key] = userData[key];
             });
@@ -75,8 +74,6 @@ router.post('/', async (req, res) => {
 // Route to get user information by firebaseUid
 router.get('/:firebaseUid', async (req, res) => {
     const { firebaseUid } = req.params; // Extract firebaseUid from URL parameters
-    console.log(req)
-    console.log(firebaseUid)
     if (!firebaseUid) {
         return res.status(400).send({ message: 'firebaseUid is required' });
     }
