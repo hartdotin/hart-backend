@@ -18,6 +18,9 @@ const userSchema = new mongoose.Schema({
             index: '2dsphere', // Create a geospatial index
             required: true
         },
+        address : String,
+        locality: String,
+        place: String
         // Include other location fields if necessary (altitude, accuracy)
     },
     altitude: Number,
@@ -31,7 +34,11 @@ const userSchema = new mongoose.Schema({
             min: Number,
             max: Number
         },
-        distance: Number
+        distance: Number,
+        height: {
+            min: String,
+            max: String
+        }
     },
     prompts: mongoose.Schema.Types.Mixed,
     hasCompletedOnboarding: Boolean

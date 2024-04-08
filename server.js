@@ -12,6 +12,7 @@ const uploadPictures = require('./routes/uploadPictures')
 const errorHandler = require('./middleware/errorMiddleware');
 const promptRoute = require('./routes/promptRoute')
 const getMatches = require('./routes/getMatches');
+const postUserActions = require('./routes/postUserActions')
 const { deleteAllUsers } = require('./utils/deleteManyUsers');
 //const { updateLocationAndAgeRange } = require('./utils/updateData');
 //const { generateUsers } = require('./utils/generateRandomUser');
@@ -34,7 +35,7 @@ app.use(bodyParser.urlencoded({extended: true}))
 const dbURI = process.env.NODE_ENV === 'production' ? process.env.MONGODB_URI_PROD : process.env.MONGODB_URI;
 //console.log(dbURI)
 mongoose.connect(dbURI)
-  .then(() => console.log("MongoDB connected"))
+  .then(() => console.log(`MongoDB ${process.env.NODE_ENV === 'production' ? 'production server' : 'dev server'} connected`))
   .catch(err => console.log(err));
 
 
@@ -78,6 +79,7 @@ app.use('/user', userRoutes);
 app.use('/upload', uploadPictures);
 app.use('/', promptRoute)
 app.use('/matches', getMatches)
+app.use('/user-action', postUserActions)
 
 // Middleware
 app.use(errorHandler);

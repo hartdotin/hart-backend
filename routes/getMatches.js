@@ -1,7 +1,8 @@
 const express = require('express');
 const User = require('../model/user');
 const router = express.Router();
-
+const Action = require('../model/userAction')
+const filterNonEmptyValues = require('../utils/filterPrompts')
 
 
 router.get('/:firebaseUid', async (req, res) => {
@@ -15,78 +16,72 @@ router.get('/:firebaseUid', async (req, res) => {
     try {
         // Find the user and their preferences
         const user = await User.findOne({ firebaseUid });
+        const actions = await Action.find({ firebaseUid, actionType: { $in: ['remove', 'report'] } });
+        console.log(actions)
+        const excludedFirebaseUids = actions.map(action => action.targetFirebaseUid);
+        console.log(excludedFirebaseUids)
+
+
+        
         if (!user) {
             return res.status(404).send({ message: 'User not found' });
         }
-
-        //console.log(user.preferences)
-
-        // Calculate the user's age from dateOfBirth
         
+
         const currentYear = new Date().getFullYear();
-        const fromBirthYear = currentYear - user.preferences.ageRange.max;
-        const toBirthYear = currentYear - user.preferences.ageRange.min;
-
-
-        const targetNumberOfMatches = 25;
         let allMatches = [];
-        //console.log(toBirthYear, fromBirthYear)
+        const targetNumberOfMatches = 25;
+        let queriesToRun = [];
 
-        // Convert the distance preference to meters
-        const maxDistance = user.preferences.distance * 1000; // Assuming distance is in kilometers
-        //console.log(maxDistance)
 
-        // Construct the query to find matches based on user preferences and interestedIn
-        // Always exclude the current user from the results
-        //const excludeCurrentUser = { _id: { $ne: user._id }, gender: user.interestedIn };
-
-        // Define preferred criteria with AND logic including the exclusion
-        const preferredQuery = {
-            _id: { $ne: user._id }, 
-            gender: user.interestedIn,
-            dateOfBirth: {
-                $gte: fromBirthYear,
-                $lte: toBirthYear
-            },
-            location: {
-                $near: {
-                    $geometry: { type: "Point", coordinates: user.location.coordinates },
-                    $maxDistance: maxDistance
-                }
-            }
-        };
-
-        let preferredMatches = await User.find(preferredQuery).limit(targetNumberOfMatches);
-        //console.log(preferredMatches)
-
-        allMatches.push(...preferredMatches);
-
-        //If preferred criteria don't yield results, fallback to broader criteria
-
-        if (allMatches.length < targetNumberOfMatches) {
-
-            const ageBasedQuery = {
+        if (user?.preferences && user?.preferences?.ageRange.min && user?.preferences?.ageRange.max && typeof user?.preferences?.distance === 'number'){
+            const fromBirthYear = currentYear - user.preferences.ageRange.max;
+            const toBirthYear = currentYear - user.preferences.ageRange.min;
+            const maxDistance = user.preferences.distance * 1000;
+            const preferredQuery = {
                 _id: { $ne: user._id }, 
                 gender: user.interestedIn,
                 dateOfBirth: {
                     $gte: fromBirthYear,
                     $lte: toBirthYear
                 },
-                _id: { $nin: allMatches.map(match => match._id) }  
+                location: {
+                    $near: {
+                        $geometry: { type: "Point", coordinates: user.location.coordinates },
+                        $maxDistance: maxDistance
+                    }
+                },
+                firebaseUid: { $nin: excludedFirebaseUids }
             };
-    
-            const ageBasedMatches = await User.find(ageBasedQuery).limit(targetNumberOfMatches - allMatches.length);
 
-            //console.log(ageBasedMatches)
+            queriesToRun.push(User.find(preferredQuery));
 
-            allMatches.push(...ageBasedMatches);
         }
 
+        // Prepare a query based on age preference if it exists
+        if (user?.preferences && user?.preferences?.ageRange && user?.preferences?.ageRange.min && user?.preferences?.ageRange.max) {
 
-        if (allMatches.length < targetNumberOfMatches) {
+            const fromBirthYear = currentYear - user?.preferences?.ageRange?.max;
+            const toBirthYear = currentYear - user?.preferences?.ageRange?.min;
 
-            const locationBasedQuery = {
-                _id: { $ne: user._id }, 
+            const ageQuery = {
+                _id: { $ne: user._id },
+                gender: user.interestedIn,
+                dateOfBirth: { $gte: fromBirthYear, $lte: toBirthYear },
+                _id: { $nin: allMatches.map(match => match._id) },
+                firebaseUid: { $nin: excludedFirebaseUids }
+
+            };
+            queriesToRun.push(User.find(ageQuery));
+        }
+
+        // Prepare a query based on location preference if it exists
+        if (user?.preferences && typeof user?.preferences?.distance === 'number') {
+
+            const maxDistance = user.preferences.distance * 1000; // Convert km to meters
+
+            const locationQuery = {
+                _id: { $ne: user._id },
                 gender: user.interestedIn,
                 location: {
                     $near: {
@@ -94,15 +89,44 @@ router.get('/:firebaseUid', async (req, res) => {
                         $maxDistance: maxDistance
                     }
                 },
-                _id: { $nin: allMatches.map(match => match._id) }
-            };
-    
-            const locationBasedMatches = await User.find(locationBasedQuery).limit(targetNumberOfMatches - allMatches.length);
+                _id: { $nin: allMatches.map(match => match._id) },
+                firebaseUid: { $nin: excludedFirebaseUids }
 
-            allMatches.push(...locationBasedMatches);
+            };
+            queriesToRun.push(User.find(locationQuery));
         }
-        
-        const matchesToSend = allMatches.slice(0, targetNumberOfMatches)
+
+        // Prepare a query based on 'interestedIn' preference if no other preferences exist
+        if (queriesToRun.length === 0) {
+
+            const interestedInQuery = {
+                _id: { $ne: user._id },
+                gender: user.interestedIn,
+                _id: { $nin: allMatches.map(match => match._id) },
+                firebaseUid: { $nin: excludedFirebaseUids }
+
+            };
+            queriesToRun.push(User.find(interestedInQuery));
+        }
+
+        // Execute all prepared queries
+        for (let query of queriesToRun) {
+            const results = await query.limit(targetNumberOfMatches - allMatches.length);
+            allMatches.push(...results);
+            if (allMatches.length >= targetNumberOfMatches) break; // Stop if we have enough matches
+        }
+
+        const results = allMatches.slice(0, targetNumberOfMatches)
+
+        const matchesToSend = results.map(user => {
+            const filledPrompts = filterNonEmptyValues(user.prompts)
+            
+            const matchWithFilledPrompts = {
+                ...user.toObject(), 
+                prompts: filledPrompts,
+            };
+            return matchWithFilledPrompts
+        })
 
         if (matchesToSend.length === 0){
             return res.status(200).send({message: 'No Matches found', matches: matchesToSend})
