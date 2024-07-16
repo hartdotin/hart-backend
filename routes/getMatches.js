@@ -21,7 +21,6 @@ router.get('/:firebaseUid', async (req, res) => {
         const excludedFirebaseUids = actions.map(action => action.targetFirebaseUid);
         console.log(excludedFirebaseUids)
 
-
         
         if (!user) {
             return res.status(404).send({ message: 'User not found' });

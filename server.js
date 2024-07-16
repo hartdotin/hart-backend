@@ -1,10 +1,11 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const mongoose = require('mongoose');
+// const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 const admin = require('firebase-admin');
 const User =  require('./model/user')
+// const firebase = require('firebase');
 
 // Import routes
 const userRoutes = require('./routes/userRoute');
@@ -31,12 +32,12 @@ app.use(bodyParser.urlencoded({extended: true}))
 
 
 
-// Connect to MongoDB
-const dbURI = process.env.NODE_ENV === 'production' ? process.env.MONGODB_URI_PROD : process.env.MONGODB_URI;
-//console.log(dbURI)
-mongoose.connect(dbURI)
-  .then(() => console.log(`MongoDB ${process.env.NODE_ENV === 'production' ? 'production server' : 'dev server'} connected`))
-  .catch(err => console.log(err));
+// // Connect to MongoDB
+// const dbURI = process.env.NODE_ENV === 'production' ? process.env.MONGODB_URI_PROD : process.env.MONGODB_URI;
+// //console.log(dbURI)
+// mongoose.connect(dbURI)
+//   .then(() => console.log(`MongoDB ${process.env.NODE_ENV === 'production' ? 'production server' : 'dev server'} connected`))
+//   .catch(err => console.log(err));
 
 
 
