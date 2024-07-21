@@ -34,79 +34,180 @@ router.get('/:firebaseUid', async (req, res) => {
         let queriesToRun = [];
 
 
-        if (user?.preferences && user?.preferences?.ageRange.min && user?.preferences?.ageRange.max && typeof user?.preferences?.distance === 'number'){
+        // if (user?.preferences && user?.preferences?.ageRange.min && user?.preferences?.ageRange.max && typeof user?.preferences?.distance === 'number'){
+        //     const fromBirthYear = currentYear - user.preferences.ageRange.max;
+        //     const toBirthYear = currentYear - user.preferences.ageRange.min;
+        //     const maxDistance = user.preferences.distance * 1000;
+        //     const preferredQuery = {
+        //         _id: { $ne: user._id }, 
+        //         gender: user.interestedIn,
+        //         dateOfBirth: {
+        //             $gte: fromBirthYear,
+        //             $lte: toBirthYear
+        //         },
+        //         location: {
+        //             $near: {
+        //                 $geometry: { type: "Point", coordinates: user.location.coordinates },
+        //                 $maxDistance: maxDistance
+        //             }
+        //         },
+        //         firebaseUid: { $nin: excludedFirebaseUids }
+        //     };
+
+        //     queriesToRun.push(User.find(preferredQuery));
+
+        // }
+
+        // // Prepare a query based on age preference if it exists
+        // if (user?.preferences && user?.preferences?.ageRange && user?.preferences?.ageRange.min && user?.preferences?.ageRange.max) {
+
+        //     const fromBirthYear = currentYear - user?.preferences?.ageRange?.max;
+        //     const toBirthYear = currentYear - user?.preferences?.ageRange?.min;
+
+        //     const ageQuery = {
+        //         _id: { $ne: user._id },
+        //         gender: user.interestedIn,
+        //         dateOfBirth: { $gte: fromBirthYear, $lte: toBirthYear },
+        //         _id: { $nin: allMatches.map(match => match._id) },
+        //         firebaseUid: { $nin: excludedFirebaseUids }
+
+        //     };
+        //     queriesToRun.push(User.find(ageQuery));
+        // }
+
+        // // Prepare a query based on location preference if it exists
+        // if (user?.preferences && typeof user?.preferences?.distance === 'number') {
+
+        //     const maxDistance = user.preferences.distance * 1000; // Convert km to meters
+
+        //     const locationQuery = {
+        //         _id: { $ne: user._id },
+        //         gender: user.interestedIn,
+        //         location: {
+        //             $near: {
+        //                 $geometry: { type: "Point", coordinates: user.location.coordinates },
+        //                 $maxDistance: maxDistance
+        //             }
+        //         },
+        //         _id: { $nin: allMatches.map(match => match._id) },
+        //         firebaseUid: { $nin: excludedFirebaseUids }
+
+        //     };
+        //     queriesToRun.push(User.find(locationQuery));
+        // }
+
+        // // Prepare a query based on 'interestedIn' preference if no other preferences exist
+        // if (queriesToRun.length === 0) {
+
+        //     const interestedInQuery = {
+        //         _id: { $ne: user._id },
+        //         gender: user.interestedIn,
+        //         _id: { $nin: allMatches.map(match => match._id) },
+        //         firebaseUid: { $nin: excludedFirebaseUids }
+
+        //     };
+        //     queriesToRun.push(User.find(interestedInQuery));
+        // }
+
+        if (user?.preferences && user?.preferences?.ageRange.min && user?.preferences?.ageRange.max && typeof user?.preferences?.distance === 'number') {
             const fromBirthYear = currentYear - user.preferences.ageRange.max;
             const toBirthYear = currentYear - user.preferences.ageRange.min;
             const maxDistance = user.preferences.distance * 1000;
-            const preferredQuery = {
-                _id: { $ne: user._id }, 
-                gender: user.interestedIn,
-                dateOfBirth: {
-                    $gte: fromBirthYear,
-                    $lte: toBirthYear
-                },
-                location: {
-                    $near: {
-                        $geometry: { type: "Point", coordinates: user.location.coordinates },
-                        $maxDistance: maxDistance
-                    }
-                },
-                firebaseUid: { $nin: excludedFirebaseUids }
-            };
 
-            queriesToRun.push(User.find(preferredQuery));
-
-        }
-
-        // Prepare a query based on age preference if it exists
-        if (user?.preferences && user?.preferences?.ageRange && user?.preferences?.ageRange.min && user?.preferences?.ageRange.max) {
-
-            const fromBirthYear = currentYear - user?.preferences?.ageRange?.max;
-            const toBirthYear = currentYear - user?.preferences?.ageRange?.min;
-
-            const ageQuery = {
+            // Priority 1: All parameters matching
+            const priority1Query = {
                 _id: { $ne: user._id },
                 gender: user.interestedIn,
                 dateOfBirth: { $gte: fromBirthYear, $lte: toBirthYear },
-                _id: { $nin: allMatches.map(match => match._id) },
-                firebaseUid: { $nin: excludedFirebaseUids }
-
-            };
-            queriesToRun.push(User.find(ageQuery));
-        }
-
-        // Prepare a query based on location preference if it exists
-        if (user?.preferences && typeof user?.preferences?.distance === 'number') {
-
-            const maxDistance = user.preferences.distance * 1000; // Convert km to meters
-
-            const locationQuery = {
-                _id: { $ne: user._id },
-                gender: user.interestedIn,
                 location: {
                     $near: {
                         $geometry: { type: "Point", coordinates: user.location.coordinates },
                         $maxDistance: maxDistance
                     }
                 },
-                _id: { $nin: allMatches.map(match => match._id) },
+                height: user.preferences.height,
                 firebaseUid: { $nin: excludedFirebaseUids }
-
             };
-            queriesToRun.push(User.find(locationQuery));
-        }
+            queriesToRun.push(User.find(priority1Query));
 
-        // Prepare a query based on 'interestedIn' preference if no other preferences exist
-        if (queriesToRun.length === 0) {
+            // Priority 2: Combination of two of the three parameters (distance, height, age with maximum priority given to age), gender mandatory
+            const priority2Queries = [
+                {
+                    _id: { $ne: user._id },
+                    gender: user.interestedIn,
+                    dateOfBirth: { $gte: fromBirthYear, $lte: toBirthYear },
+                    location: {
+                        $near: {
+                            $geometry: { type: "Point", coordinates: user.location.coordinates },
+                            $maxDistance: maxDistance
+                        }
+                    },
+                    _id: { $nin: allMatches.map(match => match._id) },
+                    firebaseUid: { $nin: excludedFirebaseUids }
+                },
+                {
+                    _id: { $ne: user._id },
+                    gender: user.interestedIn,
+                    dateOfBirth: { $gte: fromBirthYear, $lte: toBirthYear },
+                    height: user.preferences.height,
+                    _id: { $nin: allMatches.map(match => match._id) },
+                    firebaseUid: { $nin: excludedFirebaseUids }
+                },
+                {
+                    _id: { $ne: user._id },
+                    gender: user.interestedIn,
+                    location: {
+                        $near: {
+                            $geometry: { type: "Point", coordinates: user.location.coordinates },
+                            $maxDistance: maxDistance
+                        }
+                    },
+                    height: user.preferences.height,
+                    _id: { $nin: allMatches.map(match => match._id) },
+                    firebaseUid: { $nin: excludedFirebaseUids }
+                }
+            ];
+            priority2Queries.forEach((query, index) => queriesToRun.push(User.find(query)));
 
-            const interestedInQuery = {
+            // Priority 3: Combination of one of the three parameters (distance, height, age), gender mandatory
+            const priority3Queries = [
+                {
+                    _id: { $ne: user._id },
+                    gender: user.interestedIn,
+                    dateOfBirth: { $gte: fromBirthYear, $lte: toBirthYear },
+                    _id: { $nin: allMatches.map(match => match._id) },
+                    firebaseUid: { $nin: excludedFirebaseUids }
+                },
+                {
+                    _id: { $ne: user._id },
+                    gender: user.interestedIn,
+                    location: {
+                        $near: {
+                            $geometry: { type: "Point", coordinates: user.location.coordinates },
+                            $maxDistance: maxDistance
+                        }
+                    },
+                    _id: { $nin: allMatches.map(match => match._id) },
+                    firebaseUid: { $nin: excludedFirebaseUids }
+                },
+                {
+                    _id: { $ne: user._id },
+                    gender: user.interestedIn,
+                    height: user.preferences.height,
+                    _id: { $nin: allMatches.map(match => match._id) },
+                    firebaseUid: { $nin: excludedFirebaseUids }
+                }
+            ];
+            priority3Queries.forEach((query, index) => queriesToRun.push(User.find(query)));
+
+            // Priority 4: Only gender matching
+            const priority4Query = {
                 _id: { $ne: user._id },
                 gender: user.interestedIn,
                 _id: { $nin: allMatches.map(match => match._id) },
                 firebaseUid: { $nin: excludedFirebaseUids }
-
             };
-            queriesToRun.push(User.find(interestedInQuery));
+            queriesToRun.push(User.find(priority4Query));
         }
 
         // Execute all prepared queries
