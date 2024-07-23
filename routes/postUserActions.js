@@ -2,6 +2,13 @@
 const express = require('express');
 const Action = require('../model/userAction');
 const router = express.Router();
+const admin = require("firebase-admin");
+const serviceAccount = require("../realate-dating-firebase-adminsdk-3vzse-f5465697cd.json");
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+const db = admin.firestore();
+
 // Endpoint to handle user actions (like, remove, report)
 router.post('/', async (req, res) => {
     const { firebaseUid, targetFirebaseUid, actionType, reply, prompts } = req.body;
@@ -38,6 +45,13 @@ router.post('/', async (req, res) => {
             { firebaseUid: targetFirebaseUid }, 
             { $addToSet: { likesReceived: firebaseUid } } // Use $addToSet to avoid duplicates
         );
+        await updateLike(action)
+        .then(() => {
+          console.log("Like added");
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
       }
       res.status(200).json({ message: `Action ${actionType} performed successfully.` });
     } catch (error) {
@@ -46,6 +60,42 @@ router.post('/', async (req, res) => {
     }
 });
 
+// Define an async function for adding likes in firebase
+async function updateLike(action) {
+  try {
+    const docRef = db.collection("LikedUsers").doc(action.targetFirebaseUid);
+    docValue = await docRef.get();
+
+    console.log("Document data: " + JSON.stringify(docValue.data()));
+    const hideList = docValue.data().Hide;
+    const showList = docValue.data().Show;
+    const hidelen = hideList.length;
+    const showlen = showList.length;
+
+    if (hidelen === 0) {
+      if (showlen < 25) {
+        showList.push(action.firebaseUid);
+        docRef.update({
+          Show: showList,
+        });
+      } else {
+        hideList.push(action.firebaseUid);
+        docRef.update({
+          Hide: hideList,
+        });
+      }
+    } else if (hideList < 35) {
+      hideList.push(action.firebaseUid);
+      docRef.update({
+        Hide: hideList,
+      });
+    } else {
+    }
+  } catch (error) {
+    console.log("Error Occured: ", error);
+    throw error;
+  }
+}
 
 module.exports = router;
   
