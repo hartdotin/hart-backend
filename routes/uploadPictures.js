@@ -1,6 +1,7 @@
 const multer = require('multer');
 const express = require('express');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const user = require('../model/user');
 require('dotenv').config();
 
 const router = express.Router();

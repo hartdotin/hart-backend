@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
     gender: String,
     height: String,
     interests: [String],
+    likesReceived: { type: [String], default: [],
     location: {
         type: { type: String, enum: ['Point'], default: 'Point' , required: true},
         coordinates: {
@@ -41,7 +42,8 @@ const userSchema = new mongoose.Schema({
         }
     },
     prompts: mongoose.Schema.Types.Mixed,
-    hasCompletedOnboarding: Boolean
+    hasCompletedOnboarding: Boolean,
+     }
 });
 
 // Create a geospatial index for the location field

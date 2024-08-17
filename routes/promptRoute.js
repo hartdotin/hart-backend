@@ -87,4 +87,28 @@ router.post('/prompts/:firebaseId', async (req, res) => {
   }
 });
 
+
+
+// GET route for fetching prompts
+router.get('/prompts/:firebaseId', async (req, res) => {
+  try {
+    const { firebaseId } = req.params;
+
+    if (!firebaseId) {
+      return res.status(400).send('firebaseId is required');
+    }
+
+    const userResponse = await UserResponse.findOne({ firebaseId });
+
+    if (!userResponse) {
+      return res.status(404).send('User responses not found');
+    }
+
+    res.json(userResponse);
+  } catch (error) {
+    console.error('Error in GET /prompts/:firebaseId:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 module.exports = router;
