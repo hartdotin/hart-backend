@@ -43,7 +43,8 @@ const userSchema = new mongoose.Schema({
     },
     prompts: mongoose.Schema.Types.Mixed,
     hasCompletedOnboarding: Boolean,
-     }
+     },
+     
 });
 
 // Create a geospatial index for the location field

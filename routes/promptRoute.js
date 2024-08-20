@@ -1,6 +1,7 @@
 const express = require('express');
 const UserResponse = require('../model/userResponse'); // Import the model
 const router = express.Router();
+const user = require('../model/user')
 
 const prompts = {
     "Personal": {
@@ -74,7 +75,7 @@ router.post('/prompts/:firebaseId', async (req, res) => {
       return res.status(400).send('Responses are required');
     }
 
-    const userResponse = await UserResponse.findOneAndUpdate(
+    const userResponse = await user.findOneAndUpdate(
       { firebaseId },
       { firebaseId, responses },
       { new: true, upsert: true }
@@ -98,7 +99,7 @@ router.get('/prompts/:firebaseId', async (req, res) => {
       return res.status(400).send('firebaseId is required');
     }
 
-    const userResponse = await UserResponse.findOne({ firebaseId });
+    const userResponse = await user.findOne({ firebaseId });
 
     if (!userResponse) {
       return res.status(404).send('User responses not found');
