@@ -107,6 +107,25 @@ router.get('/:firebaseUid', async (req, res) => {
             queriesToRun.push(User.find(interestedInQuery));
         }
 
+        //query if any preference is not matching
+        if (queriesToRun.length === 0) {
+            var oppositeGender;
+            if(user.gender == "female"){
+                oppositeGender = "male";
+            }else{
+                oppositeGender = "female";
+            }
+            const oppositeGenderQuery = {
+                _id: { $ne: user._id },
+                gender: oppositeGender,
+                _id: { $nin: allMatches.map(match => match._id) },
+                firebaseUid: { $nin: excludedFirebaseUids }
+
+            };
+            queriesToRun.push(User.find(oppositeGenderQuery));
+        }
+        
+
         // Execute all prepared queries
         for (let query of queriesToRun) {
             const results = await query.limit(targetNumberOfMatches - allMatches.length);
