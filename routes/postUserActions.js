@@ -3,7 +3,7 @@ const express = require('express');
 const Action = require('../model/userAction');
 const router = express.Router();
 const User = require("../model/user");
-const admin = require('../realate-dating-firebase-adminsdk-3vzse-e24eb8caca.json')
+// const admin = require('../realate-dating-firebase-adminsdk-3vzse-e24eb8caca.json')
 
 
 // function to send notification

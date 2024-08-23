@@ -17,29 +17,27 @@ router.get('/:firebaseUid', async (req, res) => {
         // Find the user and their preferences
         const user = await User.findOne({ firebaseUid });
         const actions = await Action.find({ firebaseUid, actionType: { $in: ['remove', 'report'] } });
-        console.log(actions)
+        // console.log(actions)
         const excludedFirebaseUids = actions.map(action => action.targetFirebaseUid);
-        console.log(excludedFirebaseUids)
-
-
-        
+        // console.log(excludedFirebaseUids)
         if (!user) {
             return res.status(404).send({ message: 'User not found' });
         }
         
-
         const currentYear = new Date().getFullYear();
         let allMatches = [];
         const targetNumberOfMatches = 25;
         let queriesToRun = [];
 
+        console.log(user)
+        console.log(user.preferences, 'user preferences')
 
-        if (user?.preferences && user?.preferences?.ageRange.min && user?.preferences?.ageRange.max && typeof user?.preferences?.distance === 'number'){
+        if (user?.preferences && user?.preferences?.ageRange.min && user?.preferences?.ageRange.max && typeof user?.preferences?.distance === 'number') {
             const fromBirthYear = currentYear - user.preferences.ageRange.max;
             const toBirthYear = currentYear - user.preferences.ageRange.min;
             const maxDistance = user.preferences.distance * 1000;
             const preferredQuery = {
-                _id: { $ne: user._id }, 
+                _id: { $ne: user._id },
                 gender: user.interestedIn,
                 dateOfBirth: {
                     $gte: fromBirthYear,
@@ -120,20 +118,20 @@ router.get('/:firebaseUid', async (req, res) => {
 
         const matchesToSend = results.map(user => {
             const filledPrompts = filterNonEmptyValues(user.prompts)
-            
+
             const matchWithFilledPrompts = {
-                ...user.toObject(), 
+                ...user.toObject(),
                 prompts: filledPrompts,
             };
             return matchWithFilledPrompts
         })
 
-        if (matchesToSend.length === 0){
-            return res.status(200).send({message: 'No Matches found', matches: matchesToSend})
+        if (matchesToSend.length === 0) {
+            return res.status(200).send({ message: 'No Matches found', matches: matchesToSend })
         } else {
-            return res.status(200).send({message: 'Matches found', matches: matchesToSend})
+            return res.status(200).send({ message: 'Matches found', matches: matchesToSend })
         }
-        
+
         // Return up to 25 matches
         //return res.status(200).send({message: 'Error fetching matches', matches: matchesToSend});
 
@@ -143,9 +141,9 @@ router.get('/:firebaseUid', async (req, res) => {
 
         // Add more filters based on other preferences
 
-       // Execute the query to find potential matches
-       //const matches = await User.find(query); // Limit the number of matches
-       //console.log(matches)
+        // Execute the query to find potential matches
+        //const matches = await User.find(query); // Limit the number of matches
+        //console.log(matches)
 
         // Optionally, transform the matches to remove sensitive information before sending them to the client
         // const sanitizedMatches = matches.map(match => {

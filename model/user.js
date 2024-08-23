@@ -11,14 +11,10 @@ const userSchema = new mongoose.Schema({
     gender: String,
     height: String,
     interests: [String],
-    likesReceived: { type: [String], default: [],
+    // likesReceived: { type: [String], default: [],
     location: {
         type: { type: String, enum: ['Point'], default: 'Point' , required: true},
-        coordinates: {
-            type: [Number], // [longitude, latitude]
-            index: '2dsphere', // Create a geospatial index
-            required: true
-        },
+        coordinates: [Number],
         address : String,
         locality: String,
         place: String
@@ -45,7 +41,8 @@ const userSchema = new mongoose.Schema({
     hasCompletedOnboarding: Boolean,
      },
      
-});
+// }
+);
 
 // Create a geospatial index for the location field
 userSchema.index({ location: '2dsphere' });
