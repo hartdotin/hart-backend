@@ -3,8 +3,7 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
-const admin = require('firebase-admin');
-const User =  require('./model/user')
+
 
 // Import routes
 const userRoutes = require('./routes/userRoute');
@@ -15,7 +14,8 @@ const getMatches = require('./routes/getMatches');
 const postUserActions = require('./routes/postUserActions')
 const { deleteAllUsers } = require('./utils/deleteManyUsers');
 //const { updateLocationAndAgeRange } = require('./utils/updateData');
-//const { generateUsers } = require('./utils/generateRandomUser');
+// const { generateUsers } = require('./utils/generateRandomUser');
+
 
 
 
@@ -42,9 +42,9 @@ mongoose.connect(dbURI)
 
 //Generate fake user
 
-//generateUsers()
+// generateUsers()
 
-//deleteAllUsers()
+// deleteAllUsers()
 
 //updateLocationAndAgeRange()
 
@@ -80,6 +80,8 @@ app.use('/upload', uploadPictures);
 app.use('/', promptRoute)
 app.use('/matches', getMatches)
 app.use('/user-action', postUserActions)
+
+
 
 // Middleware
 app.use(errorHandler);
