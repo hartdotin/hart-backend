@@ -17,17 +17,21 @@ router.get("/:firebaseUid", async (req, res) => {
     // Find the user and their preferences
     const user = await User.findOne({ firebaseUid });
     const actions = await Action.find({
-      firebaseUid,
-      // actionType: { $in: ["remove", "report"] },
+      $or: [{ firebaseUid: firebaseUid }, { targetFirebaseUid: firebaseUid }],
     });
+
     const matchList = await MatchLists.find({
       matchedIds: { $in: [firebaseUid] },
     });
+
     const ids = matchList?.map((match) => match?.matchedIds).flat();
 
+    const excludedFirebaseUids1 = actions
+      .map((action) => action.firebaseUid)
+      .concat(ids);
     const excludedFirebaseUids = actions
       .map((action) => action.targetFirebaseUid)
-      .concat(ids);
+      .concat(excludedFirebaseUids1);
     // console.log(excludedFirebaseUids);
     if (!user) {
       return res.status(404).send({ message: "User not found" });
