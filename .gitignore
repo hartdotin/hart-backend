@@ -1,3 +1,5 @@
 /node_modules
 .env
+.yarn
 firebase.js
+realeted-firebase-admin.json
