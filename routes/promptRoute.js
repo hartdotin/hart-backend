@@ -109,19 +109,9 @@ router.get("/prompts/:firebaseId", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
-setInterval(async () => {
-  const users = await user.countDocuments();
 
-  console.log("all users...", users);
-}, 5000); // 5 minutes
 router.get("/", async (req, res) => {
-  try {
-    const users = await user.find();
-    res.json(users);
-  } catch (error) {
-    console.error("Error in GET /users:", error);
-    res.status(500).send("Internal Server Error");
-  }
+  res.json({ msg: "success", msg: "working fine for now" });
 });
 
 module.exports = router;
