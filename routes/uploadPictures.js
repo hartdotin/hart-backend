@@ -47,4 +47,33 @@ router.post("/", upload.array("images", 4), async (req, res) => {
   }
 });
 
+router.post("/single", upload.array("images", 1), async (req, res) => {
+  const bucketName = "hart-user-photos";
+  const region = process.env.AWS_REGION;
+  const urls = [];
+  try {
+    for (const file of req.files) {
+      const uniqueKey = `${uuidv4()}_${file.originalname}`; // Generate a unique key
+      const params = {
+        Bucket: bucketName,
+        Key: uniqueKey,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+      };
+
+      // Upload each file
+      const uploadResult = await s3Client.send(new PutObjectCommand(params));
+
+      // Add the S3 URL to the urls array
+      const key = encodeURIComponent(uniqueKey);
+      const url = `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
+      urls.push(url);
+    }
+
+    res.status(200).json({ message: "Files uploaded successfully", urls });
+  } catch (err) {
+    console.error("Error uploading files:", err);
+    res.status(500).json({ error: "Server error", details: err.message });
+  }
+});
 module.exports = router;
