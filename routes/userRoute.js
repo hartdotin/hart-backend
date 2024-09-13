@@ -9,6 +9,7 @@ require("dotenv").config();
 const multer = require("multer");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const UserResponse = require("../model/userResponse");
+const { v4: uuidv4 } = require("uuid"); // Use UUID for generating unique keys
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -142,7 +143,6 @@ router.get("/:firebaseUid", async (req, res) => {
 
 router.post("/:firebaseUid", upload.array("images", 4), async (req, res) => {
   const { firebaseUid } = req.params;
-
   if (!firebaseUid) {
     return res.status(400).send({ message: "firebaseUid is required" });
   }
@@ -156,24 +156,26 @@ router.post("/:firebaseUid", upload.array("images", 4), async (req, res) => {
 
     const bucketName = "hart-user-photos";
     const region = process.env.AWS_REGION;
+    const urls = [];
 
     try {
-      const uploadPromises = req.files.map((file) => {
+      for (const file of req.files) {
+        const uniqueKey = `${uuidv4()}_${file.originalname}`; // Generate a unique key
         const params = {
           Bucket: bucketName,
-          Key: file.originalname,
+          Key: uniqueKey,
           Body: file.buffer,
           ContentType: file.mimetype,
         };
 
-        return s3Client.send(new PutObjectCommand(params));
-      });
+        // Upload each file
+        const uploadResult = await s3Client.send(new PutObjectCommand(params));
 
-      const results = await Promise.all(uploadPromises);
-      const urls = results.map((result, index) => {
-        const key = encodeURIComponent(req.files[index].originalname);
-        return `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
-      });
+        // Add the S3 URL to the urls array
+        const key = encodeURIComponent(uniqueKey);
+        const url = `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
+        urls.push(url);
+      }
 
       user.profilePictures = urls;
 

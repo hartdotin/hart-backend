@@ -28,7 +28,8 @@ router.get("/:firebaseUid", async (req, res) => {
 
     const excludedFirebaseUids1 = actions
       .map((action) => action.firebaseUid)
-      .concat(ids);
+      .concat(ids)
+      .concat([firebaseUid]);
     const excludedFirebaseUids = actions
       .map((action) => action.targetFirebaseUid)
       .concat(excludedFirebaseUids1);

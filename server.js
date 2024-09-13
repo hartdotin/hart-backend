@@ -11,6 +11,7 @@ const uploadPictures = require("./routes/uploadPictures");
 const errorHandler = require("./middleware/errorMiddleware");
 const promptRoute = require("./routes/promptRoute");
 const getMatches = require("./routes/getMatches");
+const profileRoute = require("./routes/profileRoute");
 const postUserActions = require("./routes/postUserActions");
 const { deleteAllUsers } = require("./utils/deleteManyUsers");
 //const { updateLocationAndAgeRange } = require('./utils/updateData');
@@ -29,7 +30,7 @@ const dbURI =
   process.env.NODE_ENV === "production"
     ? process.env.MONGODB_URI_PROD
     : process.env.MONGODB_URI;
-//console.log(dbURI)
+// console.log(dbURI);
 mongoose
   .connect(dbURI)
   .then(() =>
@@ -77,6 +78,7 @@ mongoose
 // };
 
 app.use("/user", userRoutes);
+app.use("/profile", profileRoute);
 app.use("/upload", uploadPictures);
 app.use("/", promptRoute);
 app.use("/matches", getMatches);

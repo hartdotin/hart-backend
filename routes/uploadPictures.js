@@ -1,8 +1,9 @@
-const multer = require('multer');
-const express = require('express');
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
-const user = require('../model/user');
-require('dotenv').config();
+const multer = require("multer");
+const express = require("express");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const user = require("../model/user");
+require("dotenv").config();
+const { v4: uuidv4 } = require("uuid"); // Use UUID for generating unique keys
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -16,31 +17,32 @@ const s3Client = new S3Client({
   },
 });
 
-router.post('/', upload.array('images', 4), async (req, res) => {
-
-    const bucketName = 'hart-user-photos';
-    const region = process.env.AWS_REGION;
-    try {
-    const uploadPromises = req.files.map(file => {
+router.post("/", upload.array("images", 4), async (req, res) => {
+  const bucketName = "hart-user-photos";
+  const region = process.env.AWS_REGION;
+  const urls = [];
+  try {
+    for (const file of req.files) {
+      const uniqueKey = `${uuidv4()}_${file.originalname}`; // Generate a unique key
       const params = {
         Bucket: bucketName,
-        Key: file.originalname,
+        Key: uniqueKey,
         Body: file.buffer,
-        ContentType: file.mimetype, // Set the content type based on the file type
+        ContentType: file.mimetype,
       };
 
-      return s3Client.send(new PutObjectCommand(params));
-    });
+      // Upload each file
+      const uploadResult = await s3Client.send(new PutObjectCommand(params));
 
-    const results = await Promise.all(uploadPromises);
-    const urls = results.map((result, index) => {
-      const key = encodeURIComponent(req.files[index].originalname);
-      return `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
-    });
+      // Add the S3 URL to the urls array
+      const key = encodeURIComponent(uniqueKey);
+      const url = `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
+      urls.push(url);
+    }
 
     res.status(200).json({ message: "Files uploaded successfully", urls });
   } catch (err) {
-    console.error('Error uploading files:', err);
+    console.error("Error uploading files:", err);
     res.status(500).json({ error: "Server error", details: err.message });
   }
 });

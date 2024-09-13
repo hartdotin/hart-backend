@@ -45,4 +45,5 @@ const sendNotification = async (token, title, body) => {
 
 module.exports = {
   sendNotification,
+  admin,
 };
