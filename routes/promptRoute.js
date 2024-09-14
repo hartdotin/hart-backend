@@ -1,7 +1,7 @@
 const express = require("express");
 const UserResponse = require("../model/userResponse"); // Import the model
 const router = express.Router();
-const user = require("../model/user");
+const user = require("../model/userResponse");
 
 const prompts = {
   Personal: {
